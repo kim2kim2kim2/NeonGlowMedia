@@ -1,7 +1,8 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { Router } from "express";
+import { insertVideoSchema, insertImageSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes
@@ -78,6 +79,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(image);
     } catch (error) {
       return res.status(500).json({ message: "Failed to fetch image" });
+    }
+  });
+  
+  // Create a new video
+  apiRouter.post("/videos", async (req: Request, res: Response) => {
+    try {
+      const result = insertVideoSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid video data", 
+          errors: result.error.flatten() 
+        });
+      }
+      
+      const video = await storage.createVideo(result.data);
+      return res.status(201).json(video);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to create video" });
+    }
+  });
+  
+  // Create a new image
+  apiRouter.post("/images", async (req: Request, res: Response) => {
+    try {
+      const result = insertImageSchema.safeParse(req.body);
+      
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid image data", 
+          errors: result.error.flatten() 
+        });
+      }
+      
+      const image = await storage.createImage(result.data);
+      return res.status(201).json(image);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to create image" });
     }
   });
 
