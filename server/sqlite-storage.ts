@@ -211,20 +211,63 @@ export class SQLiteStorage implements IStorage {
 
   // Video methods
   async getVideos(category?: string): Promise<Video[]> {
-    if (category) {
-      return db.select().from(videos).where(eq(videos.category, category));
+    try {
+      let query = "SELECT * FROM videos";
+      const params = [];
+      
+      if (category) {
+        query += " WHERE category = ?";
+        params.push(category);
+      }
+      
+      const stmt = sqlite.prepare(query);
+      let results;
+      
+      if (params.length > 0) {
+        results = stmt.all(params[0]);
+      } else {
+        results = stmt.all();
+      }
+      
+      // Convert numeric featured value to boolean
+      return (results as any[]).map(video => ({
+        ...video,
+        featured: Boolean(video.featured)
+      }));
+    } catch (error) {
+      console.error("Error getting videos:", error);
+      return [];
     }
-    return db.select().from(videos);
   }
 
   async getVideoById(id: number): Promise<Video | undefined> {
-    const result = await db.select().from(videos).where(eq(videos.id, id)).limit(1);
-    return result[0];
+    try {
+      const result = sqlite.prepare("SELECT * FROM videos WHERE id = ?").get(id);
+      if (!result) return undefined;
+      
+      return {
+        ...result as any,
+        featured: Boolean((result as any).featured)
+      };
+    } catch (error) {
+      console.error("Error getting video by ID:", error);
+      return undefined;
+    }
   }
 
   async getFeaturedVideo(): Promise<Video | undefined> {
-    const result = await db.select().from(videos).where(eq(videos.featured, true)).limit(1);
-    return result[0];
+    try {
+      const result = sqlite.prepare("SELECT * FROM videos WHERE featured = 1 LIMIT 1").get();
+      if (!result) return undefined;
+      
+      return {
+        ...result as any,
+        featured: Boolean((result as any).featured)
+      };
+    } catch (error) {
+      console.error("Error getting featured video:", error);
+      return undefined;
+    }
   }
 
   async createVideo(insertVideo: InsertVideo): Promise<Video> {
@@ -262,15 +305,39 @@ export class SQLiteStorage implements IStorage {
 
   // Image methods
   async getImages(category?: string): Promise<Image[]> {
-    if (category) {
-      return db.select().from(images).where(eq(images.category, category));
+    try {
+      let query = "SELECT * FROM images";
+      const params = [];
+      
+      if (category) {
+        query += " WHERE category = ?";
+        params.push(category);
+      }
+      
+      const stmt = sqlite.prepare(query);
+      let results;
+      
+      if (params.length > 0) {
+        results = stmt.all(params[0]);
+      } else {
+        results = stmt.all();
+      }
+      
+      return results as Image[];
+    } catch (error) {
+      console.error("Error getting images:", error);
+      return [];
     }
-    return db.select().from(images);
   }
 
   async getImageById(id: number): Promise<Image | undefined> {
-    const result = await db.select().from(images).where(eq(images.id, id)).limit(1);
-    return result[0];
+    try {
+      const result = sqlite.prepare("SELECT * FROM images WHERE id = ?").get(id);
+      return result as Image | undefined;
+    } catch (error) {
+      console.error("Error getting image by ID:", error);
+      return undefined;
+    }
   }
 
   async createImage(insertImage: InsertImage): Promise<Image> {

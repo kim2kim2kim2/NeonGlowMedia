@@ -26,6 +26,7 @@ Applikasjonen vil kjøre på http://localhost:5000
 
 - **Frontend**: React, TypeScript, Tailwind CSS, shadcn/ui
 - **Backend**: Express.js, Node.js
+- **Database**: SQLite (single-file database)
 - **State Management**: TanStack Query (React Query)
 - **Video Player**: React Player
 - **Routing**: Wouter
@@ -84,10 +85,12 @@ Hver kategori er markert med sin egen neonaktige signalfarge:
 
 ### Hvordan innhold lagres
 
-Applikasjonen bruker for øyeblikket en in-memory lagringsløsning (MemStorage) som definert i `server/storage.ts`. Denne lagrer alle videoer og bilder i minnet mens applikasjonen kjører. Datastrukturen er definert i `shared/schema.ts` og inneholder:
+Applikasjonen bruker en SQLite databaseløsning som definert i `server/sqlite-storage.ts`. Denne lagrer alle videoer og bilder i en enkelt .db-fil, noe som gir persistent lagring selv etter at serveren starter på nytt. Datastrukturen er definert i `shared/schema.ts` og inneholder:
 
 - **Video**: id, title, description, thumbnailUrl, videoUrl, category, duration, views, featured, createdAt
 - **Image**: id, title, imageUrl, category, likes, views, username, createdAt
+
+SQLite-databasen finnes som en enkelt fil kalt `neonsvideo.db` i rotmappen til prosjektet.
 
 ### Hvordan legge til nytt innhold
 
@@ -133,41 +136,47 @@ fetch('/api/images', {
 });
 ```
 
-#### 2. Direkte i storage.ts
+#### 2. Direkte i databasen
 
-For testing og utvikling kan du legge til innhold direkte i `server/storage.ts` i `initializeData()`-metoden:
+For testing og utvikling kan du legge til innhold direkte i SQLite-databasen via SQL-kommandoer:
 
-```typescript
-// Legg til en ny video
-this.createVideo({
-  title: "Ny video tittel",
-  thumbnailUrl: "https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg",
-  videoUrl: "https://www.youtube.com/watch?v=VIDEO_ID",
-  category: "funny",
-  duration: "02:30",
-  views: 0
-});
+```sql
+-- Legg til en ny video
+INSERT INTO videos (title, thumbnail_url, video_url, category, duration, views, featured) 
+VALUES (
+  'Ny video tittel',
+  'https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg',
+  'https://www.youtube.com/watch?v=VIDEO_ID',
+  'funny',
+  '02:30',
+  0,
+  0
+);
 
-// Legg til et nytt bilde
-this.createImage({
-  title: "Nytt bilde tittel",
-  imageUrl: "https://example.com/image.jpg",
-  category: "cool",
-  likes: 0,
-  views: 0,
-  username: "Brukernavn"
-});
+-- Legg til et nytt bilde
+INSERT INTO images (title, image_url, category, likes, views, username) 
+VALUES (
+  'Nytt bilde tittel',
+  'https://example.com/image.jpg',
+  'cool',
+  0,
+  0,
+  'Brukernavn'
+);
 ```
+
+Du kan også endre `seedDatabaseIfEmpty()`-metoden i `server/sqlite-storage.ts` for å legge til mer innhold når databasen initialiseres første gang.
 
 ### Fremtidige forbedringer for innholdsadministrasjon
 
 I fremtidige oppdateringer planlegger vi å implementere:
 
 1. Et administratorgrensesnitt for å legge til og administrere innhold gjennom en brukervennlig UI
-2. Persistent database-lagring med PostgreSQL istedenfor in-memory lagring
+2. Mulighet for å migrere til PostgreSQL for større datavolum
 3. Filtrering av innhold basert på flere attributter
 4. Mulighet for brukere til å laste opp eget innhold
 5. Avansert moderasjonssystem for å sikre at innholdet følger retningslinjene
+6. Backup-funksjonalitet for SQLite-databasefilen
 
 ## Bruk av YouTube-videoer
 
