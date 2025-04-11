@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { sqliteStorage as storage } from "./sqlite-storage";
 import { Router } from "express";
 import { insertVideoSchema, insertImageSchema } from "@shared/schema";
 
